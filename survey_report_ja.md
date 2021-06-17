@@ -16,18 +16,18 @@
 
 ワークショップ前アンケートに13人が答えました。
 
-![](survey_report_ja_files/figure-gfm/pre-mult-choice-1.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-mult-choice-2.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-mult-choice-3.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-mult-choice-4.png)<!-- -->
+<img src="survey_report_ja_files/figure-gfm/pre-mult-choice-1.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-mult-choice-2.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-mult-choice-3.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-mult-choice-4.png" width="768" />
 
-![](survey_report_ja_files/figure-gfm/pre-single-choice-1.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-single-choice-2.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-single-choice-3.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-single-choice-4.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-single-choice-5.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-single-choice-6.png)<!-- -->![](survey_report_ja_files/figure-gfm/pre-single-choice-7.png)<!-- -->
+<img src="survey_report_ja_files/figure-gfm/pre-single-choice-1.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-single-choice-2.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-single-choice-3.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-single-choice-4.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-single-choice-5.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-single-choice-6.png" width="768" /><img src="survey_report_ja_files/figure-gfm/pre-single-choice-7.png" width="768" />
 
 ## ワークショップ後アンケート
 
 ワークショップ後アンケートに8人が答えました。
 
-![](survey_report_ja_files/figure-gfm/post-single-choice-1.png)<!-- -->![](survey_report_ja_files/figure-gfm/post-single-choice-2.png)<!-- -->
+<img src="survey_report_ja_files/figure-gfm/post-single-choice-1.png" width="960" /><img src="survey_report_ja_files/figure-gfm/post-single-choice-2.png" width="960" />
 
 ## ワークショップ前後の比較
 
 前後のアンケートで共通にあった質問です。
 
-![](survey_report_ja_files/figure-gfm/before-after-comp-1.png)<!-- -->
+<img src="survey_report_ja_files/figure-gfm/before-after-comp-1.png" width="960" />

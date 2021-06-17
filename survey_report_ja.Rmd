@@ -1,0 +1,273 @@
+---
+title: "「Rによるデータ解析入門」アンケート結果解析"
+author: "ニッタ ジョエル"
+date: "`r Sys.Date()`"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, results = "hide", cache = FALSE, fig.width = 8)
+
+library(tidyverse)
+library(ggtext)
+source(here::here("R/functions.R"))
+```
+
+```{r load-data}
+# Load the participants responses for the pre-workshop survey
+# The `#` column has a unique ID for each answer, but this is not the same
+# as the user-entered unique ID (those are unfortunately NA in some cases as the
+# participant didn't answer that question)
+partic_pre <- read_csv("data/pre-workshop-response-2021-04-02.csv") %>%
+  rename(num = `#`)
+
+# The following questions are also included in the post-workshop survey, so 
+# ignore those for now, and analyze them separately:
+# agree_raw_data = `元の生データにアクセスできることは、分析を再現するために重要である。`,
+# agree_write_script = `仕事上、小さなプログラム、スクリプトもしくはマクロを問題解決のために作成することが出来る。`,
+# agree_find_answer_online = `技術的な質問の答えをオンラインで探す方法が分かる。`,
+# agree_find_solution = `プログラミングをしていて行き詰ったときに、その問題を解決する手法を見つけることが出来る。`,
+# agree_program_confidence = `自分のプログラミングソフトウェアによるデータ解析能力に自信がある。`,
+# agree_program_reproduce = `プログラミング言語（RやPythonなど）を使うことで、自分の分析をより再現しやすくすることができる。`,
+# agree_program_efficiency = `プログラミング言語（RやPythonなど）を使用することで、データの処理をより効率的に行うことができる。`
+
+# Load the participants responses for the post-workshop survey
+partic_post <- read_csv("data/post-workshop-response-2021-04-22.csv") %>%
+	rename(num = `#`,
+		start_date = `Start Date (UTC)`,
+		end_date = `Submit Date (UTC)`,
+		network_id =  `Network ID`
+	) %>%
+	# Remove two responses that were tests (filled in before the workshop ended)
+	filter(end_date > "2021-04-15 01:18:24")
+```
+
+## はじめに
+
+これは[「Rによるデータ解析入門」](https://swcarpentry-ja.github.io/2021-04-02-todai-online-ja/)ワークショップのアンケート調査の結果です。
+
+アンケートはワークショップの前と後、一回ずつ匿名で行いました。アンケートの内容はこちらです：
+
+* [ワークショップ前アンケート](https://github.com/swcarpentry-ja/assessment-archives/blob/master/pre-workshop/pre-workshop-ja.md)
+* [ワークショップ後アンケート](https://github.com/swcarpentry-ja/assessment-archives/blob/master/post-workshop/post-workshop-ja.md)
+
+## ワークショップ前アンケート
+
+ワークショップ前アンケートに`r n_distinct(partic_pre$num)`人が答えました。
+
+```{r pre-mult-choice}
+# Plot answers to multiple-choice questions
+
+pivot_survey(partic_pre, num, `農業もしくは環境科学`:Other) %>%
+  ggplot(aes(x = n, y = value)) +
+  geom_col() +
+  labs(title = "あなたの専門もしくは関連分野について教えてください", x = "回答の数") +
+  theme_gray (base_family = "HiraKakuPro-W3") +
+  theme(axis.title.y = element_blank())
+
+pivot_survey(partic_pre, num, 事務職:Other_1) %>%
+  ggplot(aes(x = n, y = value)) +
+  geom_col() +
+  labs(title = "現在の職業またはキャリアレベルを教えてください", x = "回答の数") +
+  theme_gray (base_family = "HiraKakuPro-W3") +
+  theme(axis.title.y = element_blank())
+
+pivot_survey(partic_pre, num, `新しいスキルを習得するため。` :Other_2) %>%
+  ggplot(aes(x = n, y = value)) +
+  geom_col() +
+  labs(title = "このワークショップに参加する理由を教えてください", x = "回答の数") +
+  theme_gray (base_family = "HiraKakuPro-W3") +
+  theme(axis.title.y = element_blank())
+
+pivot_survey(partic_pre, num, `ワークショップに関する E メールもしくはチラシを受け取った。`:Other_3) %>%
+  ggplot(aes(x = n, y = value)) +
+  geom_col() +
+  labs(title = "このワークショップをどのようにして知りましたか？", x = "回答の数") +
+  theme_gray (base_family = "HiraKakuPro-W3") +
+  theme(axis.title.y = element_blank())
+```
+
+```{r pre-single-choice}
+# Plot answers to single=choice questions.
+
+# Make a tibble of questions 
+simple_answers_lookup <- tibble(
+	# short name of question for subsetting plots
+	q_short = c("which_workshop", "os", "use_gui", "use_program", "use_database", "use_version_control", "use_shell", "workflow_satisfaction", "want_to_learn"),
+	# long version of name for plotting
+	q_long = c("どのワークショップに参加しますか？",
+						 "ワークショップで使用するコンピュータのオペレーティングシステムを教えてください。",
+						 "以下を使用する頻度を教えてください：ポイントアンドクリックグラフィックユーザーインターフェースに特化したソフトウェア (例: 統計解析: SPSS、SAS、など; 地理学的解析: ArcS、 QGIS、など; ゲノム解析: Geneious、など)。",
+						 "以下を使用する頻度を教えてください：プログラム言語 (R、パイソンなど)",
+						 "以下を使用する頻度を教えてください：データベース (SQL、アクセスなど)",
+						 "以下を使用する頻度を教えてください：バージョン管理ソフトウェア (Git、Subversion (SVN)、Mercurial、など)",
+						 "以下を使用する頻度を教えてください：コマンドシェル (通常マック OS やウィンドウズのパワーシェルを介してターミナルにアクセス)",
+						 "あなたの現在のデータマネジメントと解析に関するワークフロー(どのようにデータを収集、整理、保存そして解析するか)の満足度を教えてください。",
+						 "このワークショップから学びたいことを教えてください。"),
+	# actual question for subsetting survey data
+	q = c("どのワークショップに参加しますか？",
+				"ワークショップで使用するコンピュータのオペレーティングシステムを教えてください。",
+				"ポイントアンドクリックグラフィックユーザーインターフェースに特化したソフトウェア (例: 統計解析: SPSS、SAS、など; 地理学的解析: ArcGIS、 QGIS、など; ゲノム解析: Geneious、など)",
+				"プログラム言語 (R、パイソンなど)",
+				"データベース (SQL、アクセスなど)",
+				"バージョン管理ソフトウェア (Git、Subversion (SVN)、Mercurial、など)",
+				"コマンドシェル (通常マック OS やウィンドウズのパワーシェルを介してターミナルにアクセス)",
+				"あなたの現在のデータマネジメントと解析に関するワークフロー(どのようにデータを収集、整理、保存そして解析するか)の満足度を教えてください。",
+				"このワークショップから学びたいことを教えてください。")) %>%
+	mutate(q_long = str_wrap_ja(q_long, 20) %>% 
+				 	str_replace_all(fixed("\n："), fixed("：\n"))
+	)
+
+# Convert to long format, with number of responses by answer by question
+simple_answers <-
+  select(partic_pre, num, all_of(simple_answers_lookup$q)) %>%
+  pivot_longer(-num, names_to = "q", values_to = "answer") %>%
+  filter(!is.na(answer)) %>%
+  count(q, answer) %>%
+  left_join(simple_answers_lookup, by = "q") %>%
+	select(-q)
+
+plot_simple_answer <- function(simple_answers, q_short_select) {
+  simple_answers_sub <-
+    simple_answers %>%
+    filter(q_short == q_short_select) %>%
+    mutate(answer = fct_reorder(answer, n))
+  
+  ggplot(simple_answers_sub, aes(x = n, y = answer)) +
+    geom_col() +
+    labs(title = unique(simple_answers_sub$q_long)) +
+    theme_gray (base_family = "HiraKakuPro-W3") +
+    theme(axis.title.y = element_blank()) +
+	labs(x = "回答の数")
+}
+
+plot_simple_answer(simple_answers, "os")
+plot_simple_answer(simple_answers, "use_gui")
+plot_simple_answer(simple_answers, "use_program")
+plot_simple_answer(simple_answers, "use_database")
+plot_simple_answer(simple_answers, "use_version_control")
+plot_simple_answer(simple_answers, "use_shell")
+plot_simple_answer(simple_answers, "workflow_satisfaction")
+```
+
+## ワークショップ後アンケート
+
+ワークショップ後アンケートに`r n_distinct(partic_post$num)`人が答えました。
+
+```{r post-single-choice, fig.width = 10, fig.height = 6}
+# Subset to questions that only appear on post-workshop survey
+partic_post_sub <- partic_post %>%
+	# Other questions have one column per answer, but the column names are very long
+	# (they are the actual questions).
+	# select/rename these so they are easier to read.
+	select(
+		num, 
+		id = contains("固有の ID"),
+		contains("環境で安心して学ぶことができた"),
+		contains("学んだことをすぐに活かすことができる"),
+		contains("自分の質問に対する講師の回答は明確だった"),
+		contains("講師はワークショップに熱意を持っていた"),
+		contains("気楽に講師とやり取りすることができた"),
+		contains("講師は、教える内容について豊富な知識を持っていた"),
+		contains("ヘルパーがあなたの学習経験にどのような影響を与えたか"),
+		contains("友人や同僚に勧める可能性"),
+		slug,
+		program,
+		start_date,
+		end_date,
+		network_id
+	)
+
+partic_post_sub %>%
+	select(
+		`このワークショップで学んだことを\nすぐに活かすことができる。` = `このワークショップで学んだことをすぐに活かすことができる。`,
+		`自分の質問に対する講師の\n回答は明確だった。` = `自分の質問に対する講師の回答は明確だった。`,
+		`講師はワークショップに熱意を持っていた。` = `講師はワークショップに熱意を持っていた。`,
+		`気楽に講師とやり取りすることができた。` = `気楽に講師とやり取りすることができた。`,
+		`講師は、教える内容について豊富な知識\nを持っていた。` = `講師は、教える内容について豊富な知識を持っていた。`
+	) %>% 
+	pivot_longer(names_to = "question", values_to = "response", everything()) %>%
+	filter(!is.na(response)) %>%
+	mutate(
+		response = factor(response, levels = c(1:5)) %>%
+			fct_recode("全くそう思わない（1）" = "1", " どちらでもない（3）" = "3", "強くそう思う（5）" = "5", )) %>%
+	ggplot(aes(x = response)) +
+	geom_bar() +
+	coord_flip() +
+	labs(
+		y = "回答の数"
+	) +
+	facet_wrap(~question, labeller = label_wrap_gen(width = 5)) +
+	theme_gray (base_family = "HiraKakuPro-W3") +
+	theme(
+		axis.title.y = element_blank(),
+		plot.subtitle = element_markdown()
+	)
+
+# `このワークショップを友人や同僚に勧める可能性はどのくらいでしょうか？`
+partic_post_sub %>%
+	select(recommend = contains("友人や同僚に勧める可能性")) %>%
+	ggplot(aes(x = recommend)) +
+	geom_histogram()  +
+	labs(y = "回答の数", title = "このワークショップを友人や同僚に勧める\n可能性はどのくらいでしょうか？（０−１０まで）") +
+	theme_gray (base_family = "HiraKakuPro-W3") +
+	theme(
+		axis.title.x = element_blank()
+	)
+```
+
+## ワークショップ前後の比較
+
+前後のアンケートで共通にあった質問です。
+
+```{r before-after-comp, fig.width = 10, fig.height = 6}
+
+common_cols <- intersect(colnames(partic_pre), colnames(partic_post))
+
+partic_common <- 
+	bind_rows(
+		partic_pre %>% select(all_of(common_cols)) %>% mutate(when = "pre"),
+		partic_post %>% select(all_of(common_cols)) %>% mutate(when = "post")
+	) %>%
+	select(
+		-matches("num|このアンケートを受けることに同意しますか？|18歳以上の方ですか？|固有の ID を以下のように入力してください|slug|program")
+	)
+
+partic_common %>%
+	rename(
+		`元の生データにアクセスできることは、\n分析を再現するために重要である。`= `元の生データにアクセスできることは、分析を再現するために重要である。`,
+		`仕事上、小さなプログラム、スクリプト\nもしくはマクロを問題解決のために\n作成することが出来る。` = `仕事上、小さなプログラム、スクリプトもしくはマクロを問題解決のために作成することが出来る。`,
+		`技術的な質問の答えをオンラインで\n探す方法が分かる。` = `技術的な質問の答えをオンラインで探す方法が分かる。`,
+		`自分のプログラミングソフトウェアによる\nデータ解析能力に自信がある。` = `自分のプログラミングソフトウェアによるデータ解析能力に自信がある。`,
+		`プログラミング言語（RやPythonなど）\nを使うことで、自分の分析をより再現\nしやすくすることができる。` = `プログラミング言語（RやPythonなど）を使うことで、自分の分析をより再現しやすくすることができる。`,
+		`プログラミング言語（RやPythonなど）\nを使用することで、データの処理をより\n効率的に行うことができる。` = `プログラミング言語（RやPythonなど）を使用することで、データの処理をより効率的に行うことができる。`
+	) %>%
+	pivot_longer(names_to = "question", values_to = "response", -when) %>%
+	filter(!is.na(response)) %>%
+	mutate(
+		response = factor(response, levels = c(1:5)) %>%
+			fct_recode("全くそう思わない（1）" = "1", " どちらでもない（3）" = "3", "強くそう思う（5）" = "5", )) %>%
+	ggplot(aes(x = response, fill = when)) +
+	geom_bar(position = position_dodge(preserve = "single")) +
+	scale_fill_manual(
+		labels = c("前", "後"), 
+		breaks = c("pre", "post"),
+		values = c(
+			pre = "#ef8a62",  # red  
+			post = "#67a9cf") # blue 
+		) +
+	coord_flip() +
+	labs(
+		subtitle = glue::glue("前調査 n = {nrow(partic_pre)}人、後調査 n = {nrow(partic_post)}人"),
+		y = "回答の数",
+		fill = "時点"
+	) +
+	facet_wrap(~question, labeller = label_wrap_gen(width = 5)) +
+	theme_gray (base_family = "HiraKakuPro-W3") +
+	theme(
+		axis.title.y = element_blank(),
+		plot.subtitle = element_markdown()
+	)
+```

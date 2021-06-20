@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 results
+data
+.DS_Store

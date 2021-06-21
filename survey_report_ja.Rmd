@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, results = 
 library(tidyverse)
 library(ggtext)
 source(here::here("R/functions.R"))
+
+set.seed(0621)
 ```
 
 ```{r load-data}
@@ -216,6 +218,38 @@ partic_post_sub %>%
 	theme(
 		axis.title.x = element_blank()
 	)
+```
+
+「本ワークショップの主な強みを挙げてください」に対する答え：
+
+```{r post-strengths, results = 'asis'}
+partic_post %>%
+	pull(`本ワークショップの主な強みを挙げてください。`) %>%
+	# randomize order so it's not apparent which answers came from which person
+	sample(., size = length(.), replace = FALSE) %>%
+	paste0('- "', ., '"') %>%
+	cat(sep = "\n")
+```
+
+「ワークショップの改善点を挙げてください」に対する答え：
+
+```{r post-improvements, results = 'asis'}
+partic_post %>%
+	pull(`インストラクターやヘルパーがあなたの学習経験にどのような影響を与えたか、例を挙げてください。`) %>%
+	sample(., size = length(.), replace = FALSE) %>%
+	paste0('- "', ., '"') %>%
+	cat(sep = "\n")
+```
+
+「インストラクターやヘルパーがあなたの学習経験にどのような影響を与えたか、例を挙げてください」に対する答え：
+
+```{r post-instructor-effect, results = 'asis'}
+strengths <-
+partic_post %>%
+	pull(`インストラクターやヘルパーがあなたの学習経験にどのような影響を与えたか、例を挙げてください。`) %>%
+	sample(., size = length(.), replace = FALSE) %>%
+	paste0('- "', ., '"') %>%
+	cat(sep = "\n")
 ```
 
 ## ワークショップ前後の比較
